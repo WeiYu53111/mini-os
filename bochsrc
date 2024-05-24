@@ -1,0 +1,30 @@
+# 交叉编译的时候使用这个
+display_library: sdl2
+
+# host设置bochs使用的内存, guest设置被模拟系统认为自己有多少内存 , block_size是指一个块的大小
+memory: guest=64, host=64, block_size=512
+
+# bios程序
+romimage: file=/opt/homebrew/opt/bochs/share/bochs/BIOS-bochs-latest
+
+# vgabios程序
+vgaromimage: file=/opt/homebrew/opt/bochs/share/bochs/VGABIOS-lgpl-latest
+
+# 关闭鼠标
+mouse: enabled=0
+pci: enabled=1, chipset=i440fx
+private_colormap: enabled=0
+
+# 硬盘接口1
+ata0: enabled=1, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
+ata0-master: type=disk, mode=flat, path="./build/hd.img"
+
+# 硬盘接口2
+ata1: enabled=1, ioaddr1=0x170, ioaddr2=0x370, irq=15
+
+# 启动盘
+boot: disk
+#log: /dev/null
+log: bochsout.log
+debugger_log: -
+parport1: enabled=1, file="parport.out"
