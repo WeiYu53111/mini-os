@@ -1,6 +1,7 @@
 BUILD:=./build
 
 clean:
+	# 清理上一次的生成结果
 	echo "delete dir build"
 	rm -rf $(BUILD)
 
@@ -8,6 +9,7 @@ init:
 	# 初始化,创建目录
 	mkdir -p $(BUILD)/boot
 
+#
 all:init $(BUILD)/hd.img
 
 $(BUILD)/hd.img:$(BUILD)/boot/mbr.o

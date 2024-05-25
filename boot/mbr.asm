@@ -49,7 +49,7 @@ section mbr
 			; 开头时已经为sreg初始化
 
    ; 光标位置要用到dx寄存器中内容,cx中的光标位置可忽略
-    mov cx, 5		; cx 为串长度,不包括结束符0的字符个数
+    mov cx, 10		; cx 为串长度,不包括结束符0的字符个数
     mov ax, 0x1301	; 子功能号13是显示字符及属性,要存入ah寄存器,
 			        ; al设置写字符方式 ah=01: 显示字符串,光标跟随移动
     mov bx, 0x2		; bh存储要显示的页号,此处是第0页,
@@ -59,7 +59,7 @@ section mbr
 
     jmp $		; 使程序悬停在此
 
-    message db "1 MBR"
+    message db "hello word"
 
     ; $表示当前代码行的偏移位置, $$表示整个程序起始位置
     times 510-($-$$) db 0
