@@ -15,7 +15,7 @@ mouse: enabled=0
 pci: enabled=1, chipset=i440fx
 private_colormap: enabled=0
 
-# 硬盘接口1
+# 硬盘接口1  ,  ioaddr1是数据端口、ioaddr2是磁盘控制端口，irq是用于该接口的中断请求（IRQ）线编号
 ata0: enabled=1, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
 ata0-master: type=disk, mode=flat, path="./build/hd.img"
 
@@ -28,3 +28,6 @@ boot: disk
 log: bochsout.log
 debugger_log: -
 parport1: enabled=1, file="parport.out"
+
+# 启用debug功能,需要编译源码的方式安装bochs
+magic_break: enabled=1
