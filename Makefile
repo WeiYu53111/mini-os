@@ -19,7 +19,7 @@ $(BUILD)/hd.img:$(BUILD)/boot/mbr.o ${BUILD}/boot/loader.o
 	# 将boot机器码写入磁盘的第一个扇区
 	dd if=$(BUILD)/boot/mbr.o of=$(BUILD)/hd.img bs=512 count=1 conv=notrunc
 	# 将加载器机器码写入磁盘的第一个扇区
-	dd if=$(BUILD)/boot/loader.o of=$(BUILD)/hd.img bs=512 count=1 seek=1 conv=notrunc
+	dd if=$(BUILD)/boot/loader.o of=$(BUILD)/hd.img bs=512 count=4 seek=1 conv=notrunc
 
 ${BUILD}/boot/mbr.o: boot/mbr.asm
 	nasm -i boot/include/ boot/mbr.asm -o ${BUILD}/boot/mbr.o

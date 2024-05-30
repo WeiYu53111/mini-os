@@ -1,9 +1,8 @@
 ; vstart=0x7c00 声明该程序在内存中的起始地址
-[ORG 0x7c00]
 ; 将boot.inc引进进来
 %include "boot.inc"
 
-section mbr
+section mbr vstart=0x7c00
     ; 初始化寄存器
     mov ax, cs
     mov ds, ax
@@ -74,9 +73,9 @@ section mbr
 
     mov eax,LOADER_START_SECTOR	 ; 起始扇区lba地址
     mov bx,LOADER_BASE_ADDR       ; 写入的地址
-    mov cx,1			 ; 待读入的扇区数
+    mov cx,4			 ; 待读入的扇区数
     call rd_disk_m_16		 ; 以下读取程序的起始部分（一个扇区）
-    xchg bx, bx
+    ;xchg bx, bx
     jmp LOADER_BASE_ADDR
 
     ; 读取硬盘函数实现
