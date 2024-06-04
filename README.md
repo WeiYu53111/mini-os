@@ -30,6 +30,12 @@ loader程序，使用BIOS中断0x15获取物理内存大小功能
 代码对应git commit记录为 "第5章 5.1获取物理内存大小"  
 [相关笔记](note/memory_detect.md)
 
+### 2024-06-03 第5章 5.2开启分页
+loader程序中增加了以下逻辑  
+1、读取硬盘，加载操作系统demo到16mb内存处  
+2、创建页目录、页表并建立映射关系  
+代码对应git commit记录为 "第5章 5.2开启分页"  
+[相关笔记](note/virtual_memory.md)
 
 # bochs配置
 

@@ -1,7 +1,11 @@
 ;-------------	 loader和kernel   ----------
 LOADER_BASE_ADDR equ 0x500                     ; loader起始位置
 LOADER_START_SECTOR equ 0x1                    ; loader起始扇区编号
+PAGE_DIR_TABLE_POS equ 0x100000                ; 页目录起始地址,超出1MB内存地址的第一个字节
 
+KERNEL_START_SECTOR equ 0x5                    ; loader起始扇区编号
+KERNEL_LOAD_ADDR  equ 0x1000000                ; 内核加载到内存的地址
+KERNEL_START_ADDR equ 0xc0000000               ; 内核起始虚拟地址,启用了分页功能
 
 ;--------------   gdt描述符属性  -------------
 
@@ -63,3 +67,18 @@ RPL2  equ   10b
 RPL3  equ   11b
 TI_GDT	 equ   000b
 TI_LDT	 equ   100b
+
+;----------------   页表相关属性    --------------
+
+; P位, 第一位  P=1表示在内存中
+PG_P  equ   1b
+
+; RW位, RW=0 表示可读不可写，RW=1表示可读可写，00和10中的地位0是占位用的，表示P位，与构建GDT描述一样，后续通过 各位相加构建页目录项
+PG_RW_R	 equ  00b
+PG_RW_W	 equ  10b
+
+; S位, S=0表示用户级,这表示此 PDE 指向的内存不能被特权级3的任务访问，处理器只允许特权级为 0、1、2 的任务访问该肝 PDE 指向的内存。
+; S=1表示任何特权级的任务都能访问
+PG_US_S	 equ  000b
+PG_US_U	 equ  100b
+
