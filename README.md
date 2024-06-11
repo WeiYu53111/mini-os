@@ -4,6 +4,14 @@
 该仓库只是为了让自己有一个输出与记录的地方。
 
 
+# 开发环境搭建
+
+第5章 5.2开启分页只用到mac环境搭建即可。从第5章 5.3用C语言写内核 开始就要用云服务器x86架构的ubuntu去编译C脚本生成可执行的elf文件了。
+为什么这麻烦？因为交叉编译环境还没搞定，要源码安装binutils、gcc。交叉编译等以后有时间再尝试。
+
+[mac开发环境搭建](note/mac开发环境搭建.md)  
+[云服务器开发环境搭建](note/云服务器开发环境搭建.md)
+
 ## 进度
 ### 2024-05-25  第1-2章 实验环境配置、MBR
 通过bios提供的中断程序打印helloword功能的MBR程序，可用的bochs配置文件，串联各个步骤的Makefile编写
@@ -37,50 +45,14 @@ loader程序中增加了以下逻辑
 代码对应git commit记录为 "第5章 5.2开启分页"  
 [相关笔记](note/virtual_memory.md)
 
-# bochs配置
-
-bochs版本是2.8，使用brew方式安装的
-```shell
-brew install bochs
-```
-此外还要安装sdl2
-```shell
-brew install sdl2
-```
-安装完成后，配置bochs，
-1、从bochs的安装目录下复制配置文件模板，由于是brew安装的因此，模版文件目录是在
-![img.png](note/img/bochs-sample.png)
+### 2024-06-11 第5章 5.3 C语言编写内核
+1、云服务器环境初始化
+2、优化了Makefile中的target,方便Clion可以一键上传、远程编译、下载然后运行bochs
+3、编写了sync.sh脚本用于同步、远程编译、下载编译后的目标文件、可执行文件
+4、修改了loader脚本，增加了虚拟地址的映射关系创建逻辑、增加了elf文件头、segment头解析逻辑、增加了segment复制逻辑
+代码对应git commit记录为 "第5章 5.3 C语言编写内核"
+[相关笔记](note/elf.md)
 
 
-2、需要修改配置文件中的选项如下：
-```
-# 交叉编译的时候使用这个
-display_library: sdl2
+ 
 
-# host设置bochs使用的内存, guest设置被模拟系统认为自己有多少内存 , block_size是指一个块的大小
-memory: guest=64, host=64, block_size=512
-
-# bios程序
-romimage: file=/opt/homebrew/opt/bochs/share/bochs/BIOS-bochs-latest
-
-# vgabios程序
-vgaromimage: file=/opt/homebrew/opt/bochs/share/bochs/VGABIOS-lgpl-latest
-
-# 启动方式为硬盘启动
-boot: disk
-
-# 指定启动硬盘文件在哪里
-ata0: enabled=1, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
-ata0-master: type=disk, mode=flat, path="./build/hd.img"
-```
-
-
-# 运行说明
-通过make命令编译程序、创建磁盘并编译后的机器码写入磁盘、运行bochs,详细请看Makefile。makefile知识在《操作系统真象还原》第8.1小节。
-以下是运行命令的顺序：
-```bash
-# 编译程序、创建磁盘并编译后的机器码写入磁盘
-make all
-# 运行虚拟机启动我们写的操作系统
-make bochs
-```

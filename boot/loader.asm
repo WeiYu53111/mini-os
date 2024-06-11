@@ -2,7 +2,7 @@
 ; 将boot.inc引进进来
 %include "boot.inc"
 section loader vstart=LOADER_BASE_ADDR
-LOADER_STACK_TOP equ LOADER_BASE_ADDR
+LOADER_STACK_TOP equ 0x7c00
     ; 需要设置数据段寄存器,DB命令会将数据写入  ds:[bx+si]
     ;mov ax,LOADER_BASE_ADDR
     ;mov ds,ax
@@ -140,29 +140,35 @@ LOADER_STACK_TOP equ LOADER_BASE_ADDR
        mov byte [gs:172], 't'
 
         ;--------加载 main
-        ;xchg bx,bx
+
         mov eax,KERNEL_START_SECTOR	    ; 起始扇区lba地址
         mov ebx,KERNEL_LOAD_ADDR        ; 写入的地址
-        mov cx,1			            ; 待读入的扇区数
+        mov cx,200			            ; 待读入的扇区数
+        ;xchg bx,bx
         call rd_disk_m_32		        ; 以下读取程序的起始部分（一个扇区）
-
        ; ---------------------------------------------------------------------------
        ; 开启分页
        ;(1 ）准备好页目录表及页表。
        ;(2 ）将页表地址写入控制寄存器 cr3
        ;(3 ）寄存器 的 PG 位置
-       ;xchg bx,bx
-
        ;创建分页
+       ;xchg bx,bx
        call setup_page
-       ;xchg bx,bx
-       ;开启分页功能
-       call open_page
 
+       ;开启分页功能
        ;xchg bx,bx
+       call open_page
        ;lgdt [gdt_ptr]
-       ;跳转到内核
-       jmp SELECTOR_CODE:KERNEL_START_ADDR
+        ;xchg bx,bx
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;  此时不刷新流水线也没问题  ;;;;;;;;;;;;;;;;;;;;;;;;
+        ;由于一直处在32位下,原则上不需要强制刷新,经过实际测试没有以下这两句也没问题.
+        ;但以防万一，还是加上啦，免得将来出来莫句奇妙的问题.
+        jmp SELECTOR_CODE:enter_kernel	  ;强制刷新流水线
+
+    enter_kernel:
+        call kernel_init
+        xchg bx,bx
+        jmp SELECTOR_CODE:KERNEL_START_ADDR
 
     ;-------------   创建页目录及页表   ---------------
     setup_page:
@@ -182,7 +188,6 @@ LOADER_STACK_TOP equ LOADER_BASE_ADDR
 
        ;   一个页表可表示4MB内存,下面将1mb内存映射到第一个页表，
        ;   保证加载器的代码在开启分页后能够正常运行，最简单的方式就是直接原地址映射之后不变
-
        or eax, PG_US_U | PG_RW_W | PG_P	     ; 页目录项的属性RW和P位为1,US为1,表示用户属性,所有特权级别都可以访问.
        mov [PAGE_DIR_TABLE_POS + 0x0], eax       ; 第1个目录项,在页目录表中的第1个目录项写入第一个页表的位置(0x101000)及属性(7)
 
@@ -190,13 +195,10 @@ LOADER_STACK_TOP equ LOADER_BASE_ADDR
        mov ecx ,256   ; 1mb / 4k = 256个页
        mov esi,0
        mov edx,PG_US_U | PG_RW_W | PG_P
-       .create_pte:
-            mov [ebx+esi*4],edx;此时的ebx已经在上面通过eax赋值为0x101000,也就是第一个页表的地址
-            add edx,4096
-            inc esi
-            loop .create_pte
+       call create_pte
 
-       ;创建内核PDE以及PTE
+
+       ;---------------------------------------创建内核段的  PDE以及PTE
        ;内核按照规定应该放在虚拟地址的3g~4g, 起始地址是0xc0000000 取高10位 计算页目录项
        ;0xc0000000 ,  11_0000_0000 =0x300 = 768
        ;xchg bx,bx
@@ -206,12 +208,40 @@ LOADER_STACK_TOP equ LOADER_BASE_ADDR
        mov [PAGE_DIR_TABLE_POS + 0xc00],eax
 
        ;创建页表项
-       ;bochs当前模拟的内存大小是64mb,我们把内核加载16mb处,映射的时候，需要将页表项映射到16mb处
-       mov eax,KERNEL_LOAD_ADDR
-       or eax,PG_US_U | PG_RW_W | PG_P
-       mov [ebx],eax
-       ;xchg bx,bx
+       ;bochs当前模拟的内存大小是64mb,我们把kernel.bin加载16mb处,segment复制到3mb处
+       ;所以要将0xc0000000映射到3mb处，映射多少与kernel.bin一样，暂时先映射4mb
+       mov ecx,1024
+       mov esi,0
+       mov edx, KERNEL_SEGMENT_LOAD_ADDR ;edx就是要映射的地址
+       or edx,PG_US_U | PG_RW_W | PG_P
+       call create_pte
+
+      ;-----------------------------创建kernel.bin的 PDE以及PTE，
+      ;因为解析ELF头的时候是在开启分页之后，解析的时候只能使用虚拟地址
+      ;因此直接将16mb的虚拟地址映射到物理地址16mb处，这样子
+      ;16mb二进制表示  00_00000_10000_00000_00000_00000_00000
+      ;高10位为4，中间10位为0，低12位为0,对应 第二个页目录项、第0个页表的第0个页表项
+      mov eax,PAGE_DIR_TABLE_POS + 0x3000
+      mov ebx,eax
+      or eax,PG_US_U | PG_RW_W | PG_P
+      mov [PAGE_DIR_TABLE_POS+0x10],eax
+
+      ; 接下来是页表的映射，因为我们写的内核大小目前还很小，先暂时映射个4mb吧也就是把整个页表映射完
+      mov ecx,1024
+      mov esi,0
+      mov edx,0x1000000
+      or edx,PG_US_U | PG_RW_W | PG_P
+      call create_pte
+
+      ret ; setup_page结束
+
+   create_pte:
+       mov [ebx+esi*4],edx;此时的ebx已经在上面通过eax赋值为0x101000,也就是第一个页表的地址
+       add edx,4096
+       inc esi
+       loop create_pte
        ret
+
 
     open_page:
        ; 把页目录地址赋给cr3
@@ -222,7 +252,6 @@ LOADER_STACK_TOP equ LOADER_BASE_ADDR
        mov eax, cr0
        or eax, 0x80000000
        mov cr0, eax
-
        ret
 
 
@@ -314,3 +343,73 @@ LOADER_STACK_TOP equ LOADER_BASE_ADDR
 
          loop .go_on_read
          ret
+
+    ;-----------------   将kernel.bin中的segment拷贝到编译的地址   -----------
+    kernel_init:
+       xor eax, eax
+       xor ebx, ebx		;ebx记录程序头表地址
+       xor ecx, ecx		;cx记录程序头表中的program header数量
+       xor edx, edx		;dx 记录program header尺寸,即e_phentsize
+
+
+       ;xchg bx,bx
+       ; 获取到程序头表的起始位置 e_phoff偏移文件开始部分28字节的地方是e_phoff
+       ;mov ebx,[KERNEL_LOAD_ADDR + 28]
+       ; 前面只是获取到偏移量,需要加上起始地址
+       ;add ebx,KERNEL_LOAD_ADDR
+       ; 偏移文件开始部分44字节的地方是e_phnum,表示有几个program header
+       ;mov cx, [KERNEL_LOAD_ADDR + 44]
+       ; 偏移文件42字节处的属性是e_phentsize,表示program header大小
+       ;mov dx, [KERNEL_LOAD_ADDR + 42]
+
+
+      mov dx, [KERNEL_LOAD_ADDR + 42]	  ; 偏移文件42字节处的属性是e_phentsize,表示program header大小
+      mov ebx, [KERNEL_LOAD_ADDR + 28]   ; 偏移文件开始部分28字节的地方是e_phoff,表示第1 个program header在文件中的偏移量
+                      ; 其实该值是0x34,不过还是谨慎一点，这里来读取实际值
+      add ebx, KERNEL_LOAD_ADDR
+      mov cx, [KERNEL_LOAD_ADDR + 44]    ; 偏移文件开始部分44字节的地方是e_phnum,表示有几个program header
+
+      ;xchg bx,bx
+       ; 遍历所有segment
+        .each_segment:
+           cmp byte [ebx + 0], PT_NULL		  ; 若p_type等于 PT_NULL,说明此program header未使用。
+           je .PTNULL
+
+           ;此处由调用者来平栈，调用约定是 cdecl, 参数从右往左入栈
+           ;为函数memcpy压入参数,参数是从右往左依然压入.函数原型类似于 mem_cpy(dst,src,size)
+           ;xchg bx,bx
+           push dword [ebx + 16]		  ; program header中偏移16字节的地方是p_filesz,压入函数mem_cpy的第三个参数:size
+           mov eax, [ebx + 4]			  ; 距程序头偏移量为4字节的位置是p_offset
+           add eax, KERNEL_LOAD_ADDR  ; 加上kernel.bin被加载到的物理地址,eax为该段的物理地址
+           push eax				      ; 压入函数mem_cpy的第二个参数:源地址
+           push dword [ebx + 8]	      ; 压入函数mem_cpy的第一个参数:目的地址,偏移程序头8字节的位置是p_vaddr，这就是目的地址
+           call mem_cpy				  ; 调用mem_cpy完成段复制
+           add esp,12				  ; 清理栈中压入的三个参数
+        .PTNULL:
+           add ebx, edx				  ; edx为program header大小,即e_phentsize,在此ebx指向下一个program header
+           loop .each_segment
+           ret
+
+        ;复制内存, 需要参数： 源起始地址，目标起始地址，复制内容总大小
+        ;----------  逐字节拷贝 mem_cpy(dst,src,size) ------------
+        ;输入:栈中三个参数(dst,src,size)
+        ;输出:无
+        ;---------------------------------------------------------
+        mem_cpy:
+            cld
+            push ebp
+            mov ebp, esp
+            push ecx		   ; rep指令用到了ecx，但ecx对于外层段的循环还有用，故先入栈备份
+            mov edi, [ebp + 8]	   ; dst
+            mov esi, [ebp + 12]	   ; src
+            mov ecx, [ebp + 16]	   ; size
+            ;xchg bx,bx
+            rep movsb		   ; 逐字节拷贝
+
+            ;恢复环境
+            pop ecx
+            pop ebp
+            ret
+
+
+

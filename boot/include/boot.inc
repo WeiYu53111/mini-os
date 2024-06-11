@@ -3,9 +3,10 @@ LOADER_BASE_ADDR equ 0x500                     ; loader起始位置
 LOADER_START_SECTOR equ 0x1                    ; loader起始扇区编号
 PAGE_DIR_TABLE_POS equ 0x100000                ; 页目录起始地址,超出1MB内存地址的第一个字节
 
-KERNEL_START_SECTOR equ 0x5                    ; loader起始扇区编号
-KERNEL_LOAD_ADDR  equ 0x1000000                ; 内核加载到内存的地址
-KERNEL_START_ADDR equ 0xc0000000               ; 内核起始虚拟地址,启用了分页功能
+KERNEL_START_SECTOR equ 0xa                   ; kernel.bin在硬盘的起始扇区编号
+KERNEL_LOAD_ADDR  equ 0x1000000                ; kernel.bin加载到内存的地址，16mb处
+KERNEL_SEGMENT_LOAD_ADDR  equ 0x300000        ; 解析elf文件头后，将segment复制到3mb处
+KERNEL_START_ADDR equ 0xc0001000               ; 内核起始虚拟地址,启用了分页功能
 
 ;--------------   gdt描述符属性  -------------
 
@@ -82,3 +83,7 @@ PG_RW_W	 equ  10b
 PG_US_S	 equ  000b
 PG_US_U	 equ  100b
 
+
+
+;-------------  program type 定义   --------------
+PT_NULL equ 0
