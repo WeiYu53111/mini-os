@@ -12,9 +12,10 @@ init:
 	# 初始化,创建目录
 	mkdir -p $(BUILD)/boot
 	mkdir -p $(BUILD)/kernel
+	mkdir -p $(BUILD)/lib/kernel
 
 # ---------------------------- 编译生成目标文件、可执行文件
-compile:$(BUILD)/boot/mbr.o ${BUILD}/boot/loader.o ${BUILD}/kernel/kernel.bin
+compile:$(BUILD)/boot/mbr.o ${BUILD}/boot/loader.o $(BUILD)/lib/kernel/print.o ${BUILD}/kernel/kernel.bin
 
 ${BUILD}/boot/mbr.o: boot/mbr.asm
 	nasm -i boot/include/ boot/mbr.asm -o ${BUILD}/boot/mbr.o
@@ -22,14 +23,17 @@ ${BUILD}/boot/mbr.o: boot/mbr.asm
 ${BUILD}/boot/loader.o: boot/loader.asm
 	nasm -i boot/include/ boot/loader.asm -o ${BUILD}/boot/loader.o
 
-${BUILD}/kernel/main.o: kernel/main.asm
-	nasm -i boot/include/ kernel/main.asm -o ${BUILD}/kernel/main.o
+#${BUILD}/kernel/main.o: kernel/main.asm
+	#nasm -i boot/include/ kernel/main.asm -o ${BUILD}/kernel/main.o
+
+$(BUILD)/lib/kernel/print.o:
+	nasm -f elf32 lib/kernel/print.asm -o ${BUILD}/lib/kernel/print.o
 
 $(BUILD)/kernel/kernel.bin: kernel/main.c
 	# 生成32位的目标文件
-	gcc -m32 -c -o $(BUILD)/kernel/main.o kernel/main.c
+	gcc -m32 -c -I lib/kernel -o $(BUILD)/kernel/main.o kernel/main.c
 	# 使用链接器生成可执行文件
-	ld -m elf_i386 $(BUILD)/kernel/main.o -Ttext 0xc0001000 -e main -o $(BUILD)/kernel/kernel.bin
+	ld -m elf_i386 -Ttext 0xc0001000 -e main -o $(BUILD)/kernel/kernel.bin $(BUILD)/kernel/main.o $(BUILD)/lib/kernel/print.o
 
 # ---------------------------- 写入磁盘文件
 write:compile

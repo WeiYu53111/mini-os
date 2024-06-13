@@ -17,6 +17,7 @@ ssh root@2c "mkdir -p $remote_build"
 scp -r boot $user@$host:$remote_root_dir
 scp -r kernel $user@$host:$remote_root_dir
 scp -r Makefile $user@$host:$remote_root_dir
+scp -r lib $user@$host:$remote_root_dir
 
 #------------------- 远程执行make
 
@@ -35,6 +36,6 @@ rm -rf build
 mkdir -p $local_build
 scp -r $user@$host:$remote_build/boot $local_build/boot
 scp -r $user@$host:$remote_build/kernel $local_build/kernel
-
+scp -r $user@$host:$remote_build/lib $local_build/lib
 
 
