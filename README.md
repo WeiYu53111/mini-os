@@ -55,10 +55,15 @@ loader程序中增加了以下逻辑
 
 
 ### 2024-06-13 第6章 实现单个字符打印
-1、汇编脚本print.asm实现put_char函数打印单个字符
-2、main.c中调用put_char函数输出"kernel"字符串
-3、修改Makefile、sync.sh增加同步lib目录以及print.asm的编译、链接
-代码对应git commit记录为 "第6章 实现单个字符打印"
+1、汇编脚本print.asm实现put_char函数打印单个字符  
+2、main.c中调用put_char函数输出"kernel"字符串  
+3、修改Makefile、sync.sh增加同步lib目录以及print.asm的编译、链接  
+代码对应git commit记录为 "第6章 实现单个字符打印"  
 [相关笔记](note/print.md)
 
 
+### 2024-06-14 第6章 实现字符串、整形打印
+1、汇编实现put_str函数  
+2、汇编实现put_int函数  
+代码对应git commit记录为"第6章 实现字符串、整形打印"  
+[相关笔记](note/print_int.md)
