@@ -1,19 +1,8 @@
 #include "print.h"
-
+#include "init.h"
 int main(void) {
-
-    //put_char('k');
-    //put_char('e');
-    //put_char('r');
-    //put_char('n');
-    //put_char('e');
-    //put_char('l');
-    //put_char('\n');
-
-    put_str("kernel\n");
-    put_int(30);
-
+    put_str("I am kernel\n");
+    init_all();                  // 初始化中断描述符
+    asm volatile("sti");	     // 为演示中断处理,在此临时开中断
     while(1);
-
-    //while(1);
 }

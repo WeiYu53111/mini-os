@@ -9,7 +9,7 @@ remote_boot=$remote_root_dir/boot
 remote_kernel=$remote_root_dir/kernel
 remote_build=$remote_root_dir/build
 # 本地目录
-local_build=build
+local_build=.
 
 
 #------------------- 上传代码到
@@ -34,8 +34,7 @@ rm -rf build
 
 #------------------- 下载编译好的文件
 mkdir -p $local_build
-scp -r $user@$host:$remote_build/boot $local_build/boot
-scp -r $user@$host:$remote_build/kernel $local_build/kernel
-scp -r $user@$host:$remote_build/lib $local_build/lib
+scp -r $user@$host:$remote_build $local_build/
+
 
 
