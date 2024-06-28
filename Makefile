@@ -13,7 +13,7 @@ init:
 	mkdir -p $(BUILD)
 
 # ---------------------------- 编译生成目标文件、可执行文件
-compile:$(BUILD)/mbr.o ${BUILD}/loader.o $(BUILD)/print.o $(BUILD)/init.o $(BUILD)/interrupt.o $(BUILD)/kernel.o ${BUILD}/kernel.bin
+compile:$(BUILD)/mbr.o ${BUILD}/loader.o $(BUILD)/print.o $(BUILD)/timer.o $(BUILD)/init.o $(BUILD)/interrupt.o $(BUILD)/kernel.o ${BUILD}/kernel.bin
 
 ${BUILD}/mbr.o: boot/mbr.asm
 	nasm -i boot/include/ boot/mbr.asm -o ${BUILD}/mbr.o
@@ -30,6 +30,11 @@ $(BUILD)/print.o: lib/kernel/print.asm
 $(BUILD)/kernel.o: lib/kernel/kernel.asm
 	nasm -f elf32 lib/kernel/kernel.asm -o ${BUILD}/kernel.o
 
+
+$(BUILD)/timer.o: device/timer.c
+	# 生成32位的目标文件
+	gcc -m32 -c -I lib/kernel -I lib -fno-builtin -o $(BUILD)/timer.o device/timer.c
+
 $(BUILD)/init.o: lib/kernel/init.c
 	# 生成32位的目标文件
 	gcc -m32 -c -I lib/kernel -I lib -fno-builtin -o $(BUILD)/init.o lib/kernel/init.c
@@ -43,7 +48,7 @@ $(BUILD)/kernel.bin: kernel/main.c
 	gcc -m32 -c -I lib/kernel -I lib -fno-builtin -o $(BUILD)/main.o kernel/main.c
 	# 使用链接器生成可执行文件
 	ld -m elf_i386 -Ttext 0xc0001000 -e main -o $(BUILD)/kernel.bin $(BUILD)/main.o $(BUILD)/print.o \
-	$(BUILD)/kernel.o $(BUILD)/init.o $(BUILD)/interrupt.o
+	$(BUILD)/timer.o $(BUILD)/kernel.o $(BUILD)/init.o $(BUILD)/interrupt.o
 
 # ---------------------------- 写入磁盘文件
 write:

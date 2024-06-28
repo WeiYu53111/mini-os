@@ -16,6 +16,7 @@ local_build=.
 ssh root@2c "mkdir -p $remote_build"
 scp -r boot $user@$host:$remote_root_dir
 scp -r kernel $user@$host:$remote_root_dir
+scp -r device $user@$host:$remote_root_dir
 scp -r Makefile $user@$host:$remote_root_dir
 scp -r lib $user@$host:$remote_root_dir
 
