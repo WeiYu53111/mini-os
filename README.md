@@ -79,3 +79,8 @@ loader程序中增加了以下逻辑
 通过设置8253提高时钟中断频率，为后续线程调度做准备
 代码对应git commit记录为"第7章 设置8253提高时钟中断频率"  
 [相关笔记](note/interrupt2.md)
+
+
+### 2024-07-09 第8.2节 assert以及makefile优化
+代码对应git commit记录为"第8.2 assert以及makefile优化"  
+[相关笔记](note/assert.md)

@@ -1,6 +1,10 @@
 BUILD:=./build
 
 
+# ------- 定义工具和标志 -------
+LIB:=-I lib/ -I lib/kernel/ -I lib/user/ -I kernel/ -I device/
+CFLAGS:=-Wall -fno-builtin -Wstrict-prototypes -Wmissing-prototypes -fstack-protector
+
 # ---------------------------- 清理
 clean:
 	# 清理上一次的生成结果
@@ -13,42 +17,46 @@ init:
 	mkdir -p $(BUILD)
 
 # ---------------------------- 编译生成目标文件、可执行文件
-compile:$(BUILD)/mbr.o ${BUILD}/loader.o $(BUILD)/print.o $(BUILD)/timer.o $(BUILD)/init.o $(BUILD)/interrupt.o $(BUILD)/kernel.o ${BUILD}/kernel.bin
-
-${BUILD}/mbr.o: boot/mbr.asm
-	nasm -i boot/include/ boot/mbr.asm -o ${BUILD}/mbr.o
-
-${BUILD}/loader.o: boot/loader.asm
-	nasm -i boot/include/ boot/loader.asm -o ${BUILD}/loader.o
-
-#${BUILD}/kernel/main.o: kernel/main.asm
-	#nasm -i boot/include/ kernel/main.asm -o ${BUILD}/kernel/main.o
-
-$(BUILD)/print.o: lib/kernel/print.asm
-	nasm -f elf32 lib/kernel/print.asm -o ${BUILD}/print.o
-
-$(BUILD)/kernel.o: lib/kernel/kernel.asm
-	nasm -f elf32 lib/kernel/kernel.asm -o ${BUILD}/kernel.o
 
 
-$(BUILD)/timer.o: device/timer.c
-	# 生成32位的目标文件
-	gcc -m32 -c -I lib/kernel -I lib -fno-builtin -o $(BUILD)/timer.o device/timer.c
+# ------- 源文件和对象文件 -------
+ASM_SOURCES = $(wildcard lib/kernel/*.asm)
+C_SOURCES = $(wildcard device/*.c lib/kernel/*.c kernel/*.c)
+ASM_OBJECTS = $(patsubst %.asm,${BUILD}/%.o,$(notdir $(ASM_SOURCES)))
+C_OBJECTS = $(patsubst %.c,${BUILD}/%.o,$(notdir $(C_SOURCES)))
+BOOT_SOURCE =  $(wildcard boot/*.asm)
+BOOT_OBJECTS = $(patsubst %.asm,${BUILD}/%.o,$(notdir $(BOOT_SOURCE)))
 
-$(BUILD)/init.o: lib/kernel/init.c
-	# 生成32位的目标文件
-	gcc -m32 -c -I lib/kernel -I lib -fno-builtin -o $(BUILD)/init.o lib/kernel/init.c
+# ------- 编译规则 -------
+${BUILD}/%.o: boot/%.asm
+	nasm -f bin -i boot/include/ $< -o $@
 
-$(BUILD)/interrupt.o: lib/kernel/interrupt.c
-	# 生成32位的目标文件
-	gcc -m32 -c -I lib/kernel -I lib -fno-builtin -fstack-protector -o $(BUILD)/interrupt.o lib/kernel/interrupt.c
+# kernel目录下所有汇编脚本
+${BUILD}/%.o: lib/kernel/%.asm
+	nasm -f elf32 $< -o $@
 
-$(BUILD)/kernel.bin: kernel/main.c
-	# 生成32位的目标文件
-	gcc -m32 -c -I lib/kernel -I lib -fno-builtin -o $(BUILD)/main.o kernel/main.c
-	# 使用链接器生成可执行文件
-	ld -m elf_i386 -Ttext 0xc0001000 -e main -o $(BUILD)/kernel.bin $(BUILD)/main.o $(BUILD)/print.o \
-	$(BUILD)/timer.o $(BUILD)/kernel.o $(BUILD)/init.o $(BUILD)/interrupt.o
+$(BUILD)/%.o: device/%.c
+	gcc -m32 -c  $(CFLAGS) $(LIB) -o $@ $<
+
+$(BUILD)/%.o: kernel/%.c
+	gcc -m32 -c $(CFLAGS) $(LIB) -o $@ $<
+
+$(BUILD)/%.o: lib/kernel/%.c
+	gcc -m32 -c $(CFLAGS) $(LIB) -o $@ $<
+
+# 第一个链接目标文件必须是main.o,否则entry point address地址会变，从而启动不了
+$(BUILD)/kernel.bin: $(BUILD)/main.o $(ASM_OBJECTS) $(C_OBJECTS)
+	# 两个echo命令是用来查看目标文件是否有缺漏的
+	@echo $(ASM_OBJECTS)
+	@echo $(C_OBJECTS)
+	ld -m elf_i386 -Ttext 0xc0001000 -Map $(BUILD)/kernel.map -e main $^ -o $@
+compile: $(BOOT_OBJECTS) ${BUILD}/kernel.bin
+
+show_obj:
+	@echo $(BOOT_OBJECTS)
+	@echo $(C_OBJECTS)
+	@echo $(ASM_OBJECTS)
+
 
 # ---------------------------- 写入磁盘文件
 write:

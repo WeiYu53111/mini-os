@@ -166,6 +166,8 @@ LOADER_STACK_TOP equ 0x7c00
         jmp SELECTOR_CODE:enter_kernel	  ;强制刷新流水线
 
     enter_kernel:
+        xchg bx,bx
+        nop
         call kernel_init
         xchg bx,bx
         jmp SELECTOR_CODE:KERNEL_START_ADDR
