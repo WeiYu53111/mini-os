@@ -84,3 +84,9 @@ loader程序中增加了以下逻辑
 ### 2024-07-09 第8.2节 assert以及makefile优化
 代码对应git commit记录为"第8.2 assert以及makefile优化"  
 [相关笔记](note/assert.md)
+
+### 2024-07-16 第8.5节 内存管理模块(部分)
+实现了内核内存的申请，页目录项以及页表项的自动创建
+代码对应git commit记录为"第8.5节 内存管理模块(部分)"  
+[相关笔记](note/assert.md)
+

@@ -2,8 +2,8 @@ BUILD:=./build
 
 
 # ------- 定义工具和标志 -------
-LIB:=-I lib/ -I lib/kernel/ -I lib/user/ -I kernel/ -I device/
-CFLAGS:=-Wall -fno-builtin -Wstrict-prototypes -Wmissing-prototypes -fstack-protector
+LIB:=-I kernel/ -I lib/ -I lib/kernel/ -I lib/user/ -I device/
+CFLAGS:=-std=gnu11 -Wall $(LIB) -fno-builtin -Wstrict-prototypes -Wmissing-prototypes -fstack-protector
 
 # ---------------------------- 清理
 clean:
@@ -36,13 +36,13 @@ ${BUILD}/%.o: lib/kernel/%.asm
 	nasm -f elf32 $< -o $@
 
 $(BUILD)/%.o: device/%.c
-	gcc -m32 -c  $(CFLAGS) $(LIB) -o $@ $<
+	gcc -m32 -c  $(CFLAGS) -o $@ $<
 
 $(BUILD)/%.o: kernel/%.c
-	gcc -m32 -c $(CFLAGS) $(LIB) -o $@ $<
+	gcc -m32 -c $(CFLAGS) -o $@ $<
 
 $(BUILD)/%.o: lib/kernel/%.c
-	gcc -m32 -c $(CFLAGS) $(LIB) -o $@ $<
+	gcc -m32 -c $(CFLAGS) -o $@ $<
 
 # 第一个链接目标文件必须是main.o,否则entry point address地址会变，从而启动不了
 $(BUILD)/kernel.bin: $(BUILD)/main.o $(ASM_OBJECTS) $(C_OBJECTS)

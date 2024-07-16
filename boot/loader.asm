@@ -235,6 +235,13 @@ LOADER_STACK_TOP equ 0x7c00
       or edx,PG_US_U | PG_RW_W | PG_P
       call create_pte
 
+
+      ; 为后续内存申请模块 记录页目录的起始地址
+      mov eax,PAGE_DIR_TABLE_POS
+      or eax,PG_US_U | PG_RW_W | PG_P
+      mov [PAGE_DIR_TABLE_POS + 4092],eax
+
+
       ret ; setup_page结束
 
    create_pte:
@@ -271,7 +278,6 @@ LOADER_STACK_TOP equ 0x7c00
          mov dx,0x1f2
          mov al,cl
          out dx,al            ;读取的扇区数
-
          mov eax,esi	   ;恢复ax
 
    ;第2步：将LBA地址存入0x1f3 ~ 0x1f6

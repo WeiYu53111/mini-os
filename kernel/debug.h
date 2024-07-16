@@ -1,7 +1,3 @@
-//
-// Created by W Y on 2024/6/28.
-//
-
 #ifndef MINI_OS_DEBUG_H
 #define MINI_OS_DEBUG_H
 
@@ -22,7 +18,7 @@ void panic_spin(char* filename, int line, const char* func, const char* conditio
   /* 符号#让编译器将宏的参数转化为字符串字面量 */		  \
 	 PANIC(#CONDITION);                                       \
       }
-#endif /*__NDEBUG */
+#endif
 
 
-#endif //MINI_OS_DEBUG_H
+#endif
