@@ -2,9 +2,8 @@ BUILD:=./build
 
 
 # ------- 定义工具和标志 -------
-LIB:=-I kernel/ -I lib/ -I lib/kernel/ -I lib/user/ -I device/
-CFLAGS:=-std=gnu11 -Wall $(LIB) -fno-builtin -Wstrict-prototypes -Wmissing-prototypes -fstack-protector
-
+LIB:=-I kernel/ -I lib/ -I lib/kernel/ -I lib/user/ -I device/ -I thread/
+CFLAGS:=-std=gnu11 -Wall $(LIB) -fno-builtin -Wstrict-prototypes -Wimplicit-function-declaration -Wmissing-prototypes -fstack-protector
 # ---------------------------- 清理
 clean:
 	# 清理上一次的生成结果
@@ -20,12 +19,18 @@ init:
 
 
 # ------- 源文件和对象文件 -------
-ASM_SOURCES = $(wildcard lib/kernel/*.asm)
-C_SOURCES = $(wildcard device/*.c lib/kernel/*.c kernel/*.c)
-ASM_OBJECTS = $(patsubst %.asm,${BUILD}/%.o,$(notdir $(ASM_SOURCES)))
-C_OBJECTS = $(patsubst %.c,${BUILD}/%.o,$(notdir $(C_SOURCES)))
+ASM_SOURCES = $(wildcard lib/kernel/*.asm thread/*.asm)
+C_SOURCES = $(wildcard device/*.c lib/kernel/*.c kernel/*.c thread/*.c)
+#ASM_OBJECTS = $(patsubst %.asm,${BUILD}/%.o,$(notdir $(ASM_SOURCES)))
+#C_OBJECTS = $(patsubst %.c,${BUILD}/%.o,$(notdir $(C_SOURCES)))
 BOOT_SOURCE =  $(wildcard boot/*.asm)
 BOOT_OBJECTS = $(patsubst %.asm,${BUILD}/%.o,$(notdir $(BOOT_SOURCE)))
+
+OBJS = $(BUILD)/main.o $(BUILD)/init.o $(BUILD)/interrupt.o \
+      $(BUILD)/timer.o $(BUILD)/kernel.o $(BUILD)/print.o \
+      $(BUILD)/debug.o $(BUILD)/memory.o $(BUILD)/bitmap.o \
+      $(BUILD)/string.o $(BUILD)/thread.o $(BUILD)/list.o \
+      $(BUILD)/switch.o
 
 # ------- 编译规则 -------
 ${BUILD}/%.o: boot/%.asm
@@ -35,8 +40,12 @@ ${BUILD}/%.o: boot/%.asm
 ${BUILD}/%.o: lib/kernel/%.asm
 	nasm -f elf32 $< -o $@
 
+# thread目录下所有汇编脚本
+${BUILD}/%.o: thread/%.asm
+	nasm -f elf32 $< -o $@
+
 $(BUILD)/%.o: device/%.c
-	gcc -m32 -c  $(CFLAGS) -o $@ $<
+	gcc -m32 -c $(CFLAGS) -o $@ $<
 
 $(BUILD)/%.o: kernel/%.c
 	gcc -m32 -c $(CFLAGS) -o $@ $<
@@ -44,18 +53,20 @@ $(BUILD)/%.o: kernel/%.c
 $(BUILD)/%.o: lib/kernel/%.c
 	gcc -m32 -c $(CFLAGS) -o $@ $<
 
+$(BUILD)/%.o: thread/%.c
+	gcc -m32 -c $(CFLAGS) -o $@ $<
+
 # 第一个链接目标文件必须是main.o,否则entry point address地址会变，从而启动不了
-$(BUILD)/kernel.bin: $(BUILD)/main.o $(ASM_OBJECTS) $(C_OBJECTS)
+$(BUILD)/kernel.bin: $(OBJS)
 	# 两个echo命令是用来查看目标文件是否有缺漏的
 	@echo $(ASM_OBJECTS)
 	@echo $(C_OBJECTS)
 	ld -m elf_i386 -Ttext 0xc0001000 -Map $(BUILD)/kernel.map -e main $^ -o $@
-compile: $(BOOT_OBJECTS) ${BUILD}/kernel.bin
+compile: ${BOOT_OBJECTS} ${BUILD}/kernel.bin
 
 show_obj:
 	@echo $(BOOT_OBJECTS)
-	@echo $(C_OBJECTS)
-	@echo $(ASM_OBJECTS)
+	@echo $(OBJS)
 
 
 # ---------------------------- 写入磁盘文件

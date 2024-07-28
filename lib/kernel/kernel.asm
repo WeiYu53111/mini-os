@@ -2,25 +2,24 @@
 %define ERROR_CODE nop		 ; 若在相关的异常中cpu已经自动压入了错误码,为保持栈中格式统一,这里不做操作.
 %define ZERO push 0		 ; 若在相关的异常中cpu没有压入错误码,为了统一栈中格式,就手工压入一个0
 
-extern put_str			 ;声明外部函数
 extern idt_table		 ;idt_table是C中注册的中断处理程序数组
 
 section .data
-intr_str db "interrupt occur!", 0xa, 0
 global intr_entry_table
 intr_entry_table:
 
 %macro VECTOR 2
 section .text
 intr%1entry:		 ; 每个中断处理程序都要压入中断向量号,所以一个中断类型一个中断处理程序，自己知道自己的中断向量号是多少
+   ;xchg bx,bx
+   %2				 ; 中断若有错误码会压在eip后面
+; 以下是保存上下文环境
+   push ds
+   push es
+   push fs
+   push gs
+   pushad			 ; PUSHAD指令压入32位寄存器,其入栈顺序是: EAX,ECX,EDX,EBX,ESP,EBP,ESI,EDI
 
-    %2				 ; 中断若有错误码会压在eip后面
-   ; 以下是保存上下文环境
-    push ds
-    push es
-    push fs
-    push gs
-    pushad			 ; PUSHAD指令压入32位寄存器,其入栈顺序是: EAX,ECX,EDX,EBX,ESP,EBP,ESI,EDI
    ; 如果是从片上进入的中断,除了往从片上发送EOI外,还要往主片上发送EOI
    mov al,0x20                   ; 中断结束命令EOI
    out 0xa0,al                   ; 向从片发送
@@ -33,7 +32,6 @@ intr%1entry:		 ; 每个中断处理程序都要压入中断向量号,所以一�
 section .data
    dd    intr%1entry	 ; 存储各个中断入口程序的地址，形成intr_entry_table数组
 %endmacro
-
 
 section .text
 global intr_exit
