@@ -30,7 +30,8 @@ OBJS = $(BUILD)/main.o $(BUILD)/init.o $(BUILD)/interrupt.o \
       $(BUILD)/timer.o $(BUILD)/kernel.o $(BUILD)/print.o \
       $(BUILD)/debug.o $(BUILD)/memory.o $(BUILD)/bitmap.o \
       $(BUILD)/string.o $(BUILD)/thread.o $(BUILD)/list.o \
-      $(BUILD)/switch.o $(BUILD)/console.o $(BUILD)/sync.o
+      $(BUILD)/switch.o $(BUILD)/console.o $(BUILD)/sync.o \
+      $(BUILD)/ioqueue.o $(BUILD)/keyboard.o
 
 # ------- 编译规则 -------
 ${BUILD}/%.o: boot/%.asm
