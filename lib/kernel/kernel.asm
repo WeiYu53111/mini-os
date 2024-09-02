@@ -44,6 +44,7 @@ intr_exit:
    pop es
    pop ds
    add esp, 4			   ; 跳过error_code
+   ;xchg bx,bx
    iretd
 
 VECTOR 0x00,ZERO

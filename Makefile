@@ -2,8 +2,8 @@ BUILD:=./build
 
 
 # ------- 定义工具和标志 -------
-LIB:=-I kernel/ -I lib/ -I lib/kernel/ -I lib/user/ -I device/ -I thread/
-CFLAGS:=-std=gnu11 -Wall $(LIB) -fno-builtin -Wstrict-prototypes -Wimplicit-function-declaration -Wmissing-prototypes -fstack-protector
+LIB:=-I kernel/ -I lib/ -I lib/kernel/ -I lib/user/ -I device/ -I thread/ -I userprog/
+CFLAGS:=-g -std=gnu11 -Wall $(LIB) -fno-builtin -Wstrict-prototypes -Wimplicit-function-declaration -Wmissing-prototypes -fstack-protector
 # ---------------------------- 清理
 clean:
 	# 清理上一次的生成结果
@@ -20,7 +20,7 @@ init:
 
 # ------- 源文件和对象文件 -------
 ASM_SOURCES = $(wildcard lib/kernel/*.asm thread/*.asm)
-C_SOURCES = $(wildcard device/*.c lib/kernel/*.c kernel/*.c thread/*.c)
+C_SOURCES = $(wildcard device/*.c lib/kernel/*.c kernel/*.c thread/*.c userprog/*.c)
 #ASM_OBJECTS = $(patsubst %.asm,${BUILD}/%.o,$(notdir $(ASM_SOURCES)))
 #C_OBJECTS = $(patsubst %.c,${BUILD}/%.o,$(notdir $(C_SOURCES)))
 BOOT_SOURCE =  $(wildcard boot/*.asm)
@@ -31,7 +31,7 @@ OBJS = $(BUILD)/main.o $(BUILD)/init.o $(BUILD)/interrupt.o \
       $(BUILD)/debug.o $(BUILD)/memory.o $(BUILD)/bitmap.o \
       $(BUILD)/string.o $(BUILD)/thread.o $(BUILD)/list.o \
       $(BUILD)/switch.o $(BUILD)/console.o $(BUILD)/sync.o \
-      $(BUILD)/ioqueue.o $(BUILD)/keyboard.o
+      $(BUILD)/ioqueue.o $(BUILD)/keyboard.o $(BUILD)/tss.o $(BUILD)/process.o
 
 # ------- 编译规则 -------
 ${BUILD}/%.o: boot/%.asm
@@ -55,6 +55,9 @@ $(BUILD)/%.o: lib/kernel/%.c
 	gcc -m32 -c $(CFLAGS) -o $@ $<
 
 $(BUILD)/%.o: thread/%.c
+	gcc -m32 -c $(CFLAGS) -o $@ $<
+
+$(BUILD)/%.o: userprog/%.c
 	gcc -m32 -c $(CFLAGS) -o $@ $<
 
 # 第一个链接目标文件必须是main.o,否则entry point address地址会变，从而启动不了
