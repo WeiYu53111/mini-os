@@ -6,6 +6,7 @@
 #include "console.h"
 #include "keyboard.h"
 #include "tss.h"
+#include "syscall-init.h"
 /*负责初始化所有模块 */
 void init_all() {
     put_str("init_all\n");
@@ -16,4 +17,5 @@ void init_all() {
     console_init(); //初始化终端
     keyboard_init();  // 键盘初始化
     tss_init();       // tss初始化
+    syscall_init();   // 初始化系统调用
 }

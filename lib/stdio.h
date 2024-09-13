@@ -1,0 +1,12 @@
+//
+// Created by W Y on 2024/9/4.
+//
+
+#ifndef MINI_OS_STDIO_H
+#define MINI_OS_STDIO_H
+#include "stdint.h"
+typedef char* va_list;
+uint32_t printf(const char* str, ...);
+uint32_t vsprintf(char* str, const char* format, va_list ap);
+
+#endif //MINI_OS_STDIO_H
