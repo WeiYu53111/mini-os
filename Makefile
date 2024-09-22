@@ -32,7 +32,8 @@ OBJS = $(BUILD)/main.o $(BUILD)/init.o $(BUILD)/interrupt.o \
       $(BUILD)/string.o $(BUILD)/thread.o $(BUILD)/list.o \
       $(BUILD)/switch.o $(BUILD)/console.o $(BUILD)/sync.o \
       $(BUILD)/ioqueue.o $(BUILD)/keyboard.o $(BUILD)/tss.o $(BUILD)/process.o \
-      $(BUILD)/syscall-init.o $(BUILD)/syscall.o $(BUILD)/stdio.o
+      $(BUILD)/syscall-init.o $(BUILD)/syscall.o $(BUILD)/stdio.o \
+      $(BUILD)/ide.o $(BUILD)/stdio-kernel.o
 
 # ------- 编译规则 -------
 ${BUILD}/%.o: boot/%.asm
