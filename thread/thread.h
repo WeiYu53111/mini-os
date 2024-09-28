@@ -5,6 +5,9 @@
 #include "bitmap.h"
 #include "memory.h"
 
+
+#define MAX_FILES_OPEN_PER_PROC 8
+
 /* 自定义通用函数类型,它将在很多线程函数中做为形参类型 */
 typedef void thread_func(void*);
 typedef int16_t pid_t;
@@ -96,6 +99,8 @@ struct task_struct {
 
     struct virtual_addr userprog_vaddr;   // 用户进程的虚拟地址
     struct mem_block_desc u_block_desc[DESC_CNT];   // 用户进程内存块描述符
+    int32_t fd_table[MAX_FILES_OPEN_PER_PROC];	// 已打开文件数组
+    uint32_t cwd_inode_nr;	 // 进程所在的工作目录的inode编号
     uint32_t stack_magic;	 // 用这串数字做栈的边界标记,用于检测栈的溢出
 };
 

@@ -21,6 +21,7 @@ scp -r thread $user@$host:$remote_root_dir
 scp -r Makefile $user@$host:$remote_root_dir
 scp -r lib $user@$host:$remote_root_dir
 scp -r userprog $user@$host:$remote_root_dir
+scp -r fs $user@$host:$remote_root_dir
 
 #------------------- 远程执行make
 

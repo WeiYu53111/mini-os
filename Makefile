@@ -2,7 +2,7 @@ BUILD:=./build
 
 
 # ------- 定义工具和标志 -------
-LIB:=-I kernel/ -I lib/ -I lib/kernel/ -I lib/user/ -I device/ -I thread/ -I userprog/
+LIB:=-I kernel/ -I lib/ -I lib/kernel/ -I lib/user/ -I device/ -I thread/ -I userprog/ -I fs/
 CFLAGS:=-g -std=gnu11 -Wall $(LIB) -fno-builtin -Wstrict-prototypes -Wimplicit-function-declaration -Wmissing-prototypes -fno-stack-protector
 # ---------------------------- 清理
 clean:
@@ -16,16 +16,14 @@ init:
 	mkdir -p $(BUILD)
 
 # ---------------------------- 编译生成目标文件、可执行文件
-
-
 # ------- 源文件和对象文件 -------
-ASM_SOURCES = $(wildcard lib/kernel/*.asm thread/*.asm)
-C_SOURCES = $(wildcard device/*.c lib/*.c lib/kernel/*.c lib/user/*.c kernel/*.c thread/*.c userprog/*.c)
+#ASM_SOURCES = $(wildcard lib/kernel/*.asm thread/*.asm)
+#C_SOURCES = $(wildcard device/*.c lib/*.c lib/kernel/*.c lib/user/*.c kernel/*.c thread/*.c userprog/*.c fs/*.c)
 #ASM_OBJECTS = $(patsubst %.asm,${BUILD}/%.o,$(notdir $(ASM_SOURCES)))
 #C_OBJECTS = $(patsubst %.c,${BUILD}/%.o,$(notdir $(C_SOURCES)))
-BOOT_SOURCE =  $(wildcard boot/*.asm)
-BOOT_OBJECTS = $(patsubst %.asm,${BUILD}/%.o,$(notdir $(BOOT_SOURCE)))
-
+#BOOT_SOURCE =  $(wildcard boot/*.asm)
+#BOOT_OBJECTS = $(patsubst %.asm,${BUILD}/%.o,$(notdir $(BOOT_SOURCE)))
+BOOT_OBJECTS = $(BUILD)/mbr.o $(BUILD)/loader.o
 OBJS = $(BUILD)/main.o $(BUILD)/init.o $(BUILD)/interrupt.o \
       $(BUILD)/timer.o $(BUILD)/kernel.o $(BUILD)/print.o \
       $(BUILD)/debug.o $(BUILD)/memory.o $(BUILD)/bitmap.o \
@@ -33,41 +31,22 @@ OBJS = $(BUILD)/main.o $(BUILD)/init.o $(BUILD)/interrupt.o \
       $(BUILD)/switch.o $(BUILD)/console.o $(BUILD)/sync.o \
       $(BUILD)/ioqueue.o $(BUILD)/keyboard.o $(BUILD)/tss.o $(BUILD)/process.o \
       $(BUILD)/syscall-init.o $(BUILD)/syscall.o $(BUILD)/stdio.o \
-      $(BUILD)/ide.o $(BUILD)/stdio-kernel.o
+      $(BUILD)/ide.o $(BUILD)/stdio-kernel.o $(BUILD)/fs.o \
+      $(BUILD)/dir.o $(BUILD)/file.o $(BUILD)/inode.o
 
 # ------- 编译规则 -------
+vpath %.c device/ fs/ kernel/ lib/ lib/user/ lib/kernel thread/ userprog/
+vpath %.asm lib/kernel/ thread/
+
 ${BUILD}/%.o: boot/%.asm
 	nasm -f bin -i boot/include/ $< -o $@
 
-# kernel目录下所有汇编脚本
-${BUILD}/%.o: lib/kernel/%.asm
+${BUILD}/%.o: %.asm
 	nasm -f elf32 $< -o $@
 
-# thread目录下所有汇编脚本
-${BUILD}/%.o: thread/%.asm
-	nasm -f elf32 $< -o $@
-
-$(BUILD)/%.o: device/%.c
+$(BUILD)/%.o: %.c
 	gcc -m32 -c $(CFLAGS) -o $@ $<
 
-$(BUILD)/%.o: kernel/%.c
-	gcc -m32 -c $(CFLAGS) -o $@ $<
-
-$(BUILD)/%.o: lib/kernel/%.c
-	gcc -m32 -c $(CFLAGS) -o $@ $<
-
-$(BUILD)/%.o: lib/user/%.c
-	gcc -m32 -c $(CFLAGS) -o $@ $<
-
-$(BUILD)/%.o: lib/%.c
-	gcc -m32 -c $(CFLAGS) -o $@ $<
-
-
-$(BUILD)/%.o: thread/%.c
-	gcc -m32 -c $(CFLAGS) -o $@ $<
-
-$(BUILD)/%.o: userprog/%.c
-	gcc -m32 -c $(CFLAGS) -o $@ $<
 
 # 第一个链接目标文件必须是main.o,否则entry point address地址会变，从而启动不了
 $(BUILD)/kernel.bin: $(OBJS)
@@ -96,6 +75,8 @@ write:
 	#dd if=$(BUILD)/kernel/main.o of=$(BUILD)/hd.img bs=512 count=1 seek=5 conv=notrunc
 	# 将C语言写main.c编译得到的机器码写入磁盘文件
 	dd if=$(BUILD)/kernel.bin of=$(BUILD)/hd.img bs=512 count=200 seek=10 conv=notrunc
+	# 删除磁盘2上一次运行产生的锁
+	rm -f hd2.img.lock
 
 bochs:init compile write
 	bochs -q -f bochsrc
@@ -110,4 +91,7 @@ bochs-remote: clean sync write
 	bochs -q -f bochsrc
 
 bochs-remote-run-only:
+	# 删除上一次运行的文件锁
+	rm -f $(BUILD)/hd.img.lock
+	rm -f hd2.img.lock
 	bochs -q -f bochsrc

@@ -6,6 +6,7 @@
 #define MINI_OS_IDE_H
 #include "stdint.h"
 #include "sync.h"
+#include "list.h"
 #include "bitmap.h"
 
 /* 分区结构 */
@@ -32,16 +33,20 @@ struct disk {
 
 /* ata通道结构 */
 struct ide_channel {
-    char name[8];		 // 本ata通道名称
+    char name[8];		 // 本ata通道名称, 如ata0,也被叫做ide0. 可以参考bochs配置文件中关于硬盘的配置。
     uint16_t port_base;		 // 本通道的起始端口号
     uint8_t irq_no;		 // 本通道所用的中断号
-    struct lock lock;		 // 通道锁
-    bool expecting_intr;		 // 表示等待硬盘的中断
-    struct semaphore disk_done;	 // 用于阻塞、唤醒驱动程序
+    struct lock lock;
+    bool expecting_intr;		 // 向硬盘发完命令后等待来自硬盘的中断
+    struct semaphore disk_done;	 // 硬盘处理完成.线程用这个信号量来阻塞自己，由硬盘完成后产生的中断将线程唤醒
     struct disk devices[2];	 // 一个通道上连接两个硬盘，一主一从
 };
 
+void intr_hd_handler(uint8_t irq_no);
 void ide_init(void);
 extern uint8_t channel_cnt;
 extern struct ide_channel channels[];
+extern struct list partition_list;
+void ide_read(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt);
+void ide_write(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt);
 #endif //MINI_OS_IDE_H
